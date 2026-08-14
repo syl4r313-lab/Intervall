@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14161a">
+<title>Intervall</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #14161a;
+    --muted: #6b7280;
+    --line: #e4e7ec;
+    --accent: #2f7d5d;
+    --accent-soft: #e6f2ec;
+    --track: #e4e7ec;
+    --shadow: 0 1px 2px rgba(20, 22, 26, .06), 0 8px 24px rgba(20, 22, 26, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --card: #1c1f25;
+      --text: #f2f4f7;
+      --muted: #98a1b0;
+      --line: #2b3038;
+      --accent: #4bbd8b;
+      --accent-soft: #1e2f28;
+      --track: #2b3038;
+      --shadow: none;
+    }
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap { max-width: 460px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+  h2 { font-size: 14px; margin: 0 0 12px; color: var(--muted); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+  p { margin: 0 0 12px; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
+  header .sub { color: var(--muted); font-size: 13px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+
+  /* Tabs */
+  nav { display: flex; gap: 6px; background: var(--track); padding: 4px; border-radius: 12px; margin-bottom: 16px; }
+  nav button {
+    flex: 1; border: 0; background: transparent; color: var(--muted);
+    font: inherit; font-weight: 600; font-size: 15px; padding: 9px 0;
+    border-radius: 9px; cursor: pointer;
+  }
+  nav button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+
+  /* Buttons */
+  button.primary, button.ghost {
+    width: 100%; font: inherit; font-weight: 600; font-size: 16px;
+    padding: 15px; border-radius: 12px; cursor: pointer; border: 1px solid transparent;
+  }
+  button.primary { background: var(--accent); color: #fff; }
+  button.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+  button:active { opacity: .8; }
+
+  /* Protokoll-Auswahl */
+  .chips { display: flex; gap: 8px; }
+  .chips button {
+    flex: 1; border: 1px solid var(--line); background: transparent; color: var(--muted);
+    font: inherit; font-weight: 600; font-size: 15px; padding: 10px 0; border-radius: 10px; cursor: pointer;
+  }
+  .chips button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+  /* Timer-Ring */
+  .ring { display: block; margin: 4px auto 0; width: 230px; height: 230px; }
+  .ring circle { fill: none; stroke-width: 12; stroke-linecap: round; }
+  .ring .track { stroke: var(--track); }
+  .ring .bar { stroke: var(--accent); transition: stroke-dashoffset .5s linear; }
+  .ring text { text-anchor: middle; fill: var(--text); }
+  .ring .big { font-size: 34px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .ring .small { font-size: 13px; fill: var(--muted); }
+
+  .times { display: flex; justify-content: center; gap: 24px; margin: 14px 0 18px; text-align: center; }
+  .times div span { display: block; }
+  .times .lbl { font-size: 12px; color: var(--muted); }
+  .times .val { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Gewicht */
+  .stats { display: flex; justify-content: space-between; text-align: center; margin-bottom: 16px; }
+  .stats div { flex: 1; }
+  .stats .num { font-size: 24px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stats .num.accent { color: var(--accent); }
+  .stats .lbl { font-size: 12px; color: var(--muted); }
+
+  .bar-track { height: 10px; background: var(--track); border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 5px; width: 0; transition: width .4s ease; }
+  .bar-note { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  .row { display: flex; gap: 8px; }
+  input[type="text"], input[type="date"] {
+    flex: 1; min-width: 0; font: inherit; padding: 13px 14px;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--bg); color: var(--text);
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row button.primary { width: auto; padding: 13px 22px; }
+
+  svg.chart { width: 100%; height: auto; aspect-ratio: 320 / 150; display: block; }
+  .chart .line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .dot { fill: var(--accent); }
+  .chart .goal { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; opacity: .6; }
+  .chart .lbl { font-size: 11px; fill: var(--muted); }
+
+  ul.list { list-style: none; margin: 0; padding: 0; }
+  ul.list li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  ul.list li:last-child { border-bottom: 0; }
+  ul.list .date { color: var(--muted); font-size: 14px; width: 88px; flex-shrink: 0; }
+  ul.list .main { flex: 1; font-variant-numeric: tabular-nums; }
+  ul.list .delta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  ul.list button.del {
+    border: 0; background: transparent; color: var(--muted); font: inherit;
+    font-size: 20px; line-height: 1; padding: 4px 6px; cursor: pointer; border-radius: 6px;
+  }
+
+  .streak { display: flex; gap: 6px; justify-content: space-between; }
+  .streak div { flex: 1; text-align: center; }
+  .streak .dot {
+    width: 100%; aspect-ratio: 1; max-width: 34px; margin: 0 auto 5px;
+    border-radius: 50%; background: var(--track); display: grid; place-items: center;
+    font-size: 13px; color: var(--muted);
+  }
+  .streak .dot.done { background: var(--accent); color: #fff; }
+  .streak .day { font-size: 11px; color: var(--muted); }
+
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 14px 0; }
+  .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+  .hidden { display: none !important; }
+  footer { text-align: center; margin-top: 22px; }
+  footer button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ---------- Einrichtung ---------- -->
+  <section id="setup" class="hidden">
+    <header><h1>Intervall</h1></header>
+    <div class="card">
+      <h2>Startgewicht</h2>
+      <p>Trag dein aktuelles Gewicht ein. Dein Ziel sind 10&nbsp;kg weniger.</p>
+      <div class="row">
+        <input id="setup-weight" type="text" inputmode="decimal" autocomplete="off" placeholder="z.&nbsp;B. 84,5">
+        <button class="primary" id="setup-save">Los</button>
+      </div>
+      <p class="hint" id="setup-goal"></p>
+    </div>
+  </section>
+
+  <!-- ---------- App ---------- -->
+  <main id="app" class="hidden">
+    <header>
+      <h1>Intervall</h1>
+      <span class="sub" id="header-sub"></span>
+    </header>
+
+    <nav>
+      <button id="tab-fast" aria-selected="true">Fasten</button>
+      <button id="tab-weight" aria-selected="false">Gewicht</button>
+    </nav>
+
+    <!-- Fasten -->
+    <section id="view-fast">
+      <div class="card">
+        <h2>Protokoll</h2>
+        <div class="chips" id="protocols"></div>
+
+        <svg class="ring" viewBox="0 0 220 220" aria-hidden="true">
+          <circle class="track" cx="110" cy="110" r="94"></circle>
+          <circle class="bar" id="ring-bar" cx="110" cy="110" r="94"
+                  transform="rotate(-90 110 110)" stroke-dasharray="590.6" stroke-dashoffset="590.6"></circle>
+          <text class="big" x="110" y="104" id="ring-time">00:00:00</text>
+          <text class="small" x="110" y="128" id="ring-label">bereit</text>
+        </svg>
+
+        <div class="times">
+          <div><span class="lbl">Start</span><span class="val" id="t-start">–</span></div>
+          <div><span class="lbl">Ziel</span><span class="val" id="t-end">–</span></div>
+        </div>
+
+        <button class="primary" id="fast-toggle">Fasten starten</button>
+        <p class="hint" id="fast-hint"></p>
+      </div>
+
+      <div class="card">
+        <h2>Letzte 7 Tage</h2>
+        <div class="streak" id="streak"></div>
+        <p class="hint" id="streak-note"></p>
+      </div>
+    </section>
+
+    <!-- Gewicht -->
+    <section id="view-weight" class="hidden">
+      <div class="card">
+        <div class="stats">
+          <div><div class="num" id="w-current">–</div><div class="lbl">aktuell</div></div>
+          <div><div class="num accent" id="w-lost">–</div><div class="lbl">abgenommen</div></div>
+          <div><div class="num" id="w-left">–</div><div class="lbl">bis zum Ziel</div></div>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="w-bar"></div></div>
+        <div class="bar-note"><span id="w-start-lbl">–</span><span id="w-goal-lbl">–</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Eintragen</h2>
+        <div class="row" style="margin-bottom:8px">
+          <input id="w-date" type="date">
+        </div>
+        <div class="row">
+          <input id="w-input" type="text" inputmode="decimal" autocomplete="off" placeholder="Gewicht in kg">
+          <button class="primary" id="w-save">Speichern</button>
+        </div>
+        <p class="hint">Am besten morgens, nüchtern, immer zur gleichen Zeit.</p>
+      </div>
+
+      <div class="card" id="chart-card">
+        <h2>Verlauf</h2>
+        <svg class="chart" id="chart" viewBox="0 0 320 150"></svg>
+      </div>
+
+      <div class="card">
+        <h2>Einträge</h2>
+        <ul class="list" id="w-list"></ul>
+      </div>
+    </section>
+
+    <footer><button id="reset">Alle Daten löschen</button></footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "intervall.v1";
+  var GOAL_KG = 10;
+  var PROTOCOLS = [14, 16, 18, 20];
+  var HOUR = 3600 * 1000;
+
+  var state = load();
+  var ticker = null;
+
+  function load() {
+    var base = { startWeight: null, protocol: 16, activeFast: null, fasts: [], weights: [] };
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var saved = JSON.parse(raw);
+        for (var k in base) if (saved[k] !== undefined && saved[k] !== null) base[k] = saved[k];
+      }
+    } catch (e) { /* defekte oder gesperrte Daten: mit Standardwerten weiter */ }
+    return base;
+  }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  /* ---------- Datum & Zeit ---------- */
+
+  function isoDate(d) {
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  function clock(ts) {
+    var d = new Date(ts);
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  function duration(ms) {
+    if (ms < 0) ms = 0;
+    var s = Math.floor(ms / 1000);
+    return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60);
+  }
+
+  function shortDate(iso) {
+    var p = iso.split("-");
+    return p[2] + "." + p[1] + ".";
+  }
+
+  function num(kg) {
+    return kg.toFixed(1).replace(".", ",");
+  }
+
+  /* ---------- Einrichtung ---------- */
+
+  function showSetup() {
+    $("setup").classList.remove("hidden");
+    $("app").classList.add("hidden");
+
+    var input = $("setup-weight");
+    input.addEventListener("input", function () {
+      var v = parseFloat(input.value.replace(",", "."));
+      $("setup-goal").textContent = v > 0 ? "Dein Ziel: " + num(v - GOAL_KG) + " kg" : "";
+    });
+    $("setup-save").addEventListener("click", function () {
+      var v = parseFloat(input.value.replace(",", "."));
+      if (!(v > 0)) { input.focus(); return; }
+      state.startWeight = v;
+      state.weights = [{ date: isoDate(new Date()), kg: v }];
+      save();
+      $("setup").classList.add("hidden");
+      start();
+    });
+  }
+
+  /* ---------- Fasten ---------- */
+
+  function targetMs() { return state.protocol * HOUR; }
+
+  function renderProtocols() {
+    var box = $("protocols");
+    box.innerHTML = "";
+    PROTOCOLS.forEach(function (h) {
+      var b = document.createElement("button");
+      b.textContent = h + ":" + (24 - h);
+      b.setAttribute("aria-pressed", h === state.protocol ? "true" : "false");
+      b.addEventListener("click", function () {
+        state.protocol = h;
+        save();
+        renderProtocols();
+        renderFast();
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function renderFast() {
+    var bar = $("ring-bar");
+    var circumference = 2 * Math.PI * 94;
+    bar.setAttribute("stroke-dasharray", circumference);
+
+    var fast = state.activeFast;
+
+    if (fast) {
+      var elapsed = Date.now() - fast.start;
+      var target = fast.target * HOUR;
+      var done = elapsed >= target;
+
+      $("ring-time").textContent = duration(done ? elapsed : target - elapsed);
+      $("ring-label").textContent = done ? "Ziel geschafft" : "verbleibend";
+      bar.setAttribute("stroke-dashoffset", circumference * (1 - Math.min(elapsed / target, 1)));
+
+      $("t-start").textContent = clock(fast.start);
+      $("t-end").textContent = clock(fast.start + target);
+      $("fast-toggle").textContent = "Fasten beenden";
+      $("fast-hint").textContent = done
+        ? "Du fastest seit " + duration(elapsed).slice(0, 5) + " Stunden."
+        : "Essensfenster ab " + clock(fast.start + target) + " Uhr.";
+    } else {
+      $("ring-time").textContent = "00:00:00";
+      $("ring-label").textContent = state.protocol + " Stunden";
+      bar.setAttribute("stroke-dashoffset", circumference);
+
+      var now = new Date();
+      $("t-start").textContent = clock(now.getTime());
+      $("t-end").textContent = clock(now.getTime() + targetMs());
+      $("fast-toggle").textContent = "Fasten starten";
+
+      var last = state.fasts[state.fasts.length - 1];
+      if (last) {
+        var windowEnd = last.end + (24 - last.target) * HOUR;
+        var leftMs = windowEnd - Date.now();
+        $("fast-hint").textContent = leftMs > 0
+          ? "Essensfenster noch " + duration(leftMs).slice(0, 5) + " Stunden (bis " + clock(windowEnd) + " Uhr)."
+          : "Essensfenster vorbei – gute Zeit für die nächste Runde.";
+      } else {
+        $("fast-hint").textContent = "Tipp: Starte direkt nach dem Abendessen.";
+      }
+    }
+
+    $("header-sub").textContent = fast ? "am fasten" : state.protocol + ":" + (24 - state.protocol);
+  }
+
+  function toggleFast() {
+    if (state.activeFast) {
+      var f = state.activeFast;
+      var end = Date.now();
+      state.fasts.push({ start: f.start, end: end, target: f.target, hit: end - f.start >= f.target * HOUR });
+      state.activeFast = null;
+    } else {
+      state.activeFast = { start: Date.now(), target: state.protocol };
+    }
+    save();
+    renderFast();
+    renderStreak();
+  }
+
+  function renderStreak() {
+    var box = $("streak");
+    box.innerHTML = "";
+
+    var names = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+    var hitDays = {};
+    state.fasts.forEach(function (f) {
+      if (f.hit) hitDays[isoDate(new Date(f.start))] = true;
+    });
+
+    var count = 0;
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date();
+      d.setDate(d.getDate() - i);
+      var done = !!hitDays[isoDate(d)];
+      if (done) count++;
+
+      var cell = document.createElement("div");
+      var dot = document.createElement("div");
+      dot.className = "dot" + (done ? " done" : "");
+      dot.textContent = done ? "✓" : "";
+      var day = document.createElement("div");
+      day.className = "day";
+      day.textContent = names[d.getDay()];
+      cell.appendChild(dot);
+      cell.appendChild(day);
+      box.appendChild(cell);
+    }
+
+    $("streak-note").textContent = count === 0
+      ? "Noch kein abgeschlossenes Fasten diese Woche."
+      : count + " von 7 Tagen geschafft.";
+  }
+
+  /* ---------- Gewicht ---------- */
+
+  function sortedWeights() {
+    return state.weights.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  }
+
+  function goalWeight() { return state.startWeight - GOAL_KG; }
+
+  function renderWeight() {
+    var list = sortedWeights();
+    var current = list.length ? list[list.length - 1].kg : state.startWeight;
+    var lost = state.startWeight - current;
+    var left = current - goalWeight();
+
+    $("w-current").textContent = num(current);
+    $("w-lost").textContent = (lost > 0 ? "" : lost < 0 ? "+" : "") + num(Math.abs(lost));
+    $("w-left").textContent = left > 0 ? num(left) : "0,0";
+    $("w-bar").style.width = Math.max(0, Math.min(100, (lost / GOAL_KG) * 100)) + "%";
+    $("w-start-lbl").textContent = "Start " + num(state.startWeight) + " kg";
+    $("w-goal-lbl").textContent = "Ziel " + num(goalWeight()) + " kg";
+
+    renderChart(list);
+    renderList(list);
+  }
+
+  function renderChart(list) {
+    var svg = $("chart");
+    var card = $("chart-card");
+
+    if (list.length < 2) {
+      card.classList.add("hidden");
+      return;
+    }
+    card.classList.remove("hidden");
+
+    var W = 320, H = 150, padX = 26, padTop = 14, padBottom = 34;
+    var values = list.map(function (e) { return e.kg; });
+    var lo = Math.min.apply(null, values.concat([goalWeight()]));
+    var hi = Math.max.apply(null, values.concat([state.startWeight]));
+    if (hi - lo < 1) { hi += 0.5; lo -= 0.5; }
+
+    function x(i) { return padX + (i / (list.length - 1)) * (W - padX * 2); }
+    function y(kg) { return padTop + (1 - (kg - lo) / (hi - lo)) * (H - padTop - padBottom); }
+
+    var parts = [];
+    parts.push('<line class="goal" x1="' + padX + '" y1="' + y(goalWeight()) + '" x2="' + (W - padX) + '" y2="' + y(goalWeight()) + '"/>');
+    parts.push('<text class="lbl" x="' + padX + '" y="' + (y(goalWeight()) - 5) + '">Ziel</text>');
+
+    var d = list.map(function (e, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(e.kg).toFixed(1); }).join(" ");
+    parts.push('<path class="line" d="' + d + '"/>');
+
+    list.forEach(function (e, i) {
+      parts.push('<circle class="dot" cx="' + x(i).toFixed(1) + '" cy="' + y(e.kg).toFixed(1) + '" r="3"/>');
+    });
+
+    var first = list[0], last = list[list.length - 1];
+    parts.push('<text class="lbl" x="' + padX + '" y="' + (H - 2) + '">' + shortDate(first.date) + '</text>');
+    parts.push('<text class="lbl" x="' + (W - padX) + '" y="' + (H - 2) + '" text-anchor="end">' + shortDate(last.date) + '</text>');
+
+    svg.innerHTML = parts.join("");
+  }
+
+  function renderList(list) {
+    var ul = $("w-list");
+    ul.innerHTML = "";
+
+    if (!list.length) {
+      ul.innerHTML = '<li class="empty">Noch keine Einträge.</li>';
+      return;
+    }
+
+    list.slice().reverse().forEach(function (entry, idx, arr) {
+      var li = document.createElement("li");
+
+      var date = document.createElement("span");
+      date.className = "date";
+      date.textContent = shortDate(entry.date);
+
+      var main = document.createElement("span");
+      main.className = "main";
+      main.textContent = num(entry.kg) + " kg";
+
+      var delta = document.createElement("span");
+      delta.className = "delta";
+      var prev = arr[idx + 1];
+      if (prev) {
+        var diff = entry.kg - prev.kg;
+        delta.textContent = (diff > 0 ? "+" : diff < 0 ? "−" : "±") + num(Math.abs(diff));
+      }
+
+      var del = document.createElement("button");
+      del.className = "del";
+      del.title = "Eintrag löschen";
+      del.textContent = "×";
+      del.addEventListener("click", function () {
+        state.weights = state.weights.filter(function (w) { return w.date !== entry.date; });
+        save();
+        renderWeight();
+      });
+
+      li.appendChild(date);
+      li.appendChild(main);
+      li.appendChild(delta);
+      li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  function saveWeight() {
+    var input = $("w-input");
+    var kg = parseFloat(input.value.replace(",", "."));
+    if (!(kg > 0)) { input.focus(); return; }
+
+    var date = $("w-date").value || isoDate(new Date());
+    var existing = state.weights.filter(function (w) { return w.date === date; })[0];
+    if (existing) existing.kg = kg;
+    else state.weights.push({ date: date, kg: kg });
+
+    save();
+    input.value = "";
+    input.blur();
+    renderWeight();
+  }
+
+  /* ---------- Tabs ---------- */
+
+  function showTab(name) {
+    var isFast = name === "fast";
+    $("tab-fast").setAttribute("aria-selected", isFast);
+    $("tab-weight").setAttribute("aria-selected", !isFast);
+    $("view-fast").classList.toggle("hidden", !isFast);
+    $("view-weight").classList.toggle("hidden", isFast);
+  }
+
+  /* ---------- Start ---------- */
+
+  function start() {
+    $("app").classList.remove("hidden");
+
+    renderProtocols();
+    renderFast();
+    renderStreak();
+    $("w-date").value = isoDate(new Date());
+    renderWeight();
+
+    $("fast-toggle").addEventListener("click", toggleFast);
+    $("w-save").addEventListener("click", saveWeight);
+    $("w-input").addEventListener("keydown", function (e) { if (e.key === "Enter") saveWeight(); });
+    $("tab-fast").addEventListener("click", function () { showTab("fast"); });
+    $("tab-weight").addEventListener("click", function () { showTab("weight"); });
+    $("reset").addEventListener("click", function () {
+      if (confirm("Wirklich alle Daten löschen? Das lässt sich nicht rückgängig machen.")) {
+        try { localStorage.removeItem(KEY); } catch (e) {}
+        location.reload();
+      }
+    });
+
+    // Der Timer rechnet immer aus dem gespeicherten Startzeitpunkt,
+    // damit er einen Reload oder eine gesperrte Bildschirmzeit übersteht.
+    if (!ticker) ticker = setInterval(function () { if (state.activeFast) renderFast(); }, 1000);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) { renderFast(); renderStreak(); }
+    });
+  }
+
+  if (state.startWeight === null) showSetup();
+  else start();
+})();
+</script>
+</body>
+</html>
