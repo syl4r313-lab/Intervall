@@ -2,18 +2,32 @@
 
 Eine schlichte App fürs Intervallfasten, mit einem Ziel: 10 kg abnehmen.
 
-Alles steckt in einer einzigen Datei — `index.html`. Kein Setup, keine Installation,
-kein Konto, keine Werbung. Die Daten liegen ausschließlich im Browser (localStorage)
+**→ https://syl4r313-lab.github.io/Intervall/**
+
+Die App besteht im Kern aus einer einzigen Datei — `index.html`. Kein Setup, kein
+Konto, keine Werbung. Die Daten liegen ausschließlich im Browser (localStorage)
 und verlassen das Gerät nicht.
 
 ## Benutzen
 
-Die Datei `index.html` im Browser öffnen — per Doppelklick oder auf dem Handy über
-den Browser. Beim ersten Start das aktuelle Gewicht eintragen; das Ziel wird
-automatisch auf 10 kg weniger gesetzt.
+Die Adresse oben aufrufen. Beim ersten Start das aktuelle Gewicht eintragen; das
+Ziel wird automatisch auf 10 kg weniger gesetzt.
 
-Auf dem Handy lässt sich die Seite über „Zum Home-Bildschirm hinzufügen" ablegen
-und startet dann wie eine normale App.
+Auf dem Handy über das Teilen-Menü „Zum Home-Bildschirm hinzufügen" — dann startet
+sie im eigenen Fenster ohne Browserleiste, mit eigenem Symbol. Am Rechner bieten
+Chrome und Edge in der Adressleiste ein Installieren-Symbol an.
+
+Ein Service Worker legt die App lokal ab, sie läuft also auch ohne Internet.
+Beim Start wird trotzdem kurz nach einer neueren Fassung geschaut, damit
+Änderungen ankommen.
+
+Alternativ genügt weiterhin ein Doppelklick auf `index.html` — dann ohne
+Installation und ohne Service Worker.
+
+## Veröffentlichen
+
+`.github/workflows/pages.yml` schiebt bei jedem Push auf den Standard-Branch die
+Dateien nach GitHub Pages. Nichts zu bauen, die Dateien gehen unverändert online.
 
 ## Was drin ist
 
