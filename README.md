@@ -55,6 +55,17 @@ Endet ein Fasten rechnerisch vor seinem Start, ist der Folgetag gemeint — die
 übliche Nacht zwischen Abendessen und Mittag. Zeiten in der Zukunft werden
 abgelehnt.
 
+**Erinnerung ans Ende.** Während eines laufenden Fastens erscheint
+*Kalender-Erinnerung für HH:MM Uhr*. Ein Tippen erzeugt einen Termin mit Alarm
+zur Zielzeit; ab da meldet sich der Kalender des Geräts — auch bei geschlossener
+App und ohne Internet.
+
+Bewusst kein Web-Push: Eine Push-Nachricht wird von einem Server verschickt, und
+eine statisch ausgelieferte Seite hat keinen. Ein App-eigener Timer hilft nicht,
+weil das Betriebssystem die App im Hintergrund einfriert — also genau dann, wenn
+die Erinnerung gebraucht wird. Der Kalender löst das ohne Server und ohne
+laufende Kosten.
+
 **Gewicht**
 
 - Aktuelles Gewicht, bereits abgenommene Kilos, Rest bis zum Ziel

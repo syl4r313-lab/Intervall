@@ -95,9 +95,13 @@
   nav button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
 
   /* Buttons */
-  button.primary, button.ghost {
+  button.primary, button.ghost, a.ghost {
     width: 100%; font: inherit; font-weight: 600; font-size: 16px;
     padding: 15px; border-radius: 12px; cursor: pointer; border: 1px solid transparent;
+  }
+  a.ghost {
+    display: block; box-sizing: border-box; text-align: center; text-decoration: none;
+    background: transparent; color: var(--text); border-color: var(--line);
   }
   button.primary { background: var(--accent); color: #fff; }
   button.ghost { background: transparent; color: var(--text); border-color: var(--line); }
@@ -172,7 +176,7 @@
   .streak .dot.done { background: var(--accent); color: #fff; }
   .streak .day { font-size: 11px; color: var(--muted); }
 
-  button.ghost.small { padding: 11px; font-size: 15px; margin-top: 10px; }
+  button.ghost.small, a.ghost.small { padding: 11px; font-size: 15px; margin-top: 10px; }
   button.ghost.danger { color: #b3261e; margin-top: 8px; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) button.ghost.danger { color: #f2837a; }
@@ -262,6 +266,7 @@
         <button class="primary" id="fast-toggle">Fasten starten</button>
         <p class="hint" id="fast-hint"></p>
 
+        <a class="ghost small hidden" id="remind" download="intervall.ics">Erinnerung</a>
         <button class="ghost small hidden" id="fix-open">Startzeit korrigieren</button>
         <div id="fix-form" class="subform hidden">
           <div class="row">
@@ -479,6 +484,10 @@
       $("fast-hint").textContent = done
         ? "Du fastest seit " + duration(elapsed).slice(0, 5) + " Stunden."
         : "Essensfenster ab " + clock(fast.start + target) + " Uhr.";
+
+      // Nach Erreichen des Ziels wäre der Weckruf bereits vergangen.
+      if (done) hideReminder();
+      else showReminder(fast.start + target);
     } else {
       $("ring-time").textContent = "00:00:00";
       $("ring-label").textContent = state.protocol + " Stunden";
@@ -489,6 +498,7 @@
       $("t-start").textContent = clock(now.getTime());
       $("t-end").textContent = clock(now.getTime() + targetMs());
       $("fast-toggle").textContent = "Fasten starten";
+      hideReminder();
 
       var last = state.fasts[state.fasts.length - 1];
       if (last) {
@@ -521,6 +531,64 @@
     }
     save();
     renderAll();
+  }
+
+  /* ---------- Erinnerung über den Kalender ---------- */
+
+  /* Eine statisch ausgelieferte Seite kann keine Push-Nachricht verschicken –
+     dafür bräuchte es einen Server, der zur Zielzeit aufwacht. Ein eigener
+     Timer hilft nicht, weil das Betriebssystem die App im Hintergrund
+     einfriert. Deshalb übergeben wir den Weckruf an den Kalender des Geräts:
+     der meldet sich zuverlässig, auch bei geschlossener App und ohne Netz. */
+
+  function icsStamp(ts) {
+    var d = new Date(ts);
+    return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + "T" +
+           pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "00Z";
+  }
+
+  function buildIcs(endTs) {
+    return [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Intervall//Fasten//DE",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "BEGIN:VEVENT",
+      "UID:intervall-" + endTs + "@intervall.local",
+      "DTSTAMP:" + icsStamp(Date.now()),
+      "DTSTART:" + icsStamp(endTs),
+      "DTEND:" + icsStamp(endTs + 15 * 60000),
+      "SUMMARY:Essensfenster offen",
+      "DESCRIPTION:Dein Fasten ist geschafft.",
+      "BEGIN:VALARM",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:Essensfenster offen",
+      "TRIGGER:-PT0M",
+      "END:VALARM",
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+  }
+
+  var reminderUrl = null;
+  var reminderFor = null;
+
+  function showReminder(endTs) {
+    var a = $("remind");
+    // renderFast läuft jede Sekunde – die Datei nur bei geänderter Zielzeit neu bauen.
+    if (reminderFor !== endTs) {
+      if (reminderUrl) URL.revokeObjectURL(reminderUrl);
+      reminderUrl = URL.createObjectURL(new Blob([buildIcs(endTs)], { type: "text/calendar" }));
+      reminderFor = endTs;
+      a.href = reminderUrl;
+      a.textContent = "Kalender-Erinnerung für " + clock(endTs) + " Uhr";
+    }
+    a.classList.remove("hidden");
+  }
+
+  function hideReminder() {
+    $("remind").classList.add("hidden");
   }
 
   /* ---------- Zeiten von Hand setzen ---------- */
