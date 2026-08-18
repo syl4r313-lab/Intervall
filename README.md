@@ -36,11 +36,24 @@ Dateien nach GitHub Pages. Nichts zu bauen, die Dateien gehen unverändert onlin
 - Protokoll wählen: 14:10, 16:8, 18:6 oder 20:4
 - Timer mit Ring, zeigt die verbleibende Zeit bis zum Ziel
 - Start- und Zielzeit auf einen Blick, danach das Essensfenster
-- Übersicht der letzten 7 Tage
+- Übersicht der letzten 7 Tage und Liste der letzten Fastenzeiten
 
 Der Timer rechnet immer aus dem gespeicherten Startzeitpunkt. Er läuft also
 korrekt weiter, wenn der Browser geschlossen, das Handy gesperrt oder die Seite
 neu geladen wird.
+
+**Wenn der Knopf vergessen wurde.** Der Timer ist nicht die einzige Quelle —
+jede Zeit lässt sich von Hand setzen:
+
+- *Startzeit korrigieren* erscheint während eines laufenden Fastens und
+  verschiebt den Start nachträglich auf die richtige Uhrzeit.
+- *Zeit nachtragen* trägt ein komplettes Fasten für einen beliebigen Tag ein,
+  auch wenn das Handy gar nicht dabei war.
+- Ein Tippen auf eine Zeile im Verlauf öffnet sie zum Ändern oder Löschen.
+
+Endet ein Fasten rechnerisch vor seinem Start, ist der Folgetag gemeint — die
+übliche Nacht zwischen Abendessen und Mittag. Zeiten in der Zukunft werden
+abgelehnt.
 
 **Gewicht**
 

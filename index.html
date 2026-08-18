@@ -137,7 +137,7 @@
   .bar-note { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 8px; }
 
   .row { display: flex; gap: 8px; }
-  input[type="text"], input[type="date"] {
+  input[type="text"], input[type="date"], input[type="time"] {
     flex: 1; min-width: 0; font: inherit; padding: 13px 14px;
     border: 1px solid var(--line); border-radius: 12px;
     background: var(--bg); color: var(--text);
@@ -152,9 +152,9 @@
   .chart .lbl { font-size: 11px; fill: var(--muted); }
 
   ul.list { list-style: none; margin: 0; padding: 0; }
-  ul.list li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  ul.list li { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
   ul.list li:last-child { border-bottom: 0; }
-  ul.list .date { color: var(--muted); font-size: 14px; width: 88px; flex-shrink: 0; }
+  ul.list .date { color: var(--muted); font-size: 14px; width: 62px; flex-shrink: 0; }
   ul.list .main { flex: 1; font-variant-numeric: tabular-nums; }
   ul.list .delta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   ul.list button.del {
@@ -171,6 +171,26 @@
   }
   .streak .dot.done { background: var(--accent); color: #fff; }
   .streak .day { font-size: 11px; color: var(--muted); }
+
+  button.ghost.small { padding: 11px; font-size: 15px; margin-top: 10px; }
+  button.ghost.danger { color: #b3261e; margin-top: 8px; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) button.ghost.danger { color: #f2837a; }
+  }
+  :root[data-theme="dark"] button.ghost.danger { color: #f2837a; }
+
+  .subform { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .subform .row { margin-bottom: 10px; }
+  .field { flex: 1; min-width: 0; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .field input { width: 100%; }
+  .subform .row:last-of-type button { flex: 1; margin-top: 0; }
+
+  ul.list li.tappable { cursor: pointer; }
+  ul.list .times-cell { flex: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  ul.list .dur { white-space: nowrap; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  ul.list .mark { width: 14px; text-align: center; color: var(--accent); font-size: 14px; }
+  ul.list .chev { color: var(--muted); font-size: 18px; line-height: 1; }
 
   .warn {
     background: var(--warn-bg); border: 1px solid var(--warn); color: var(--warn);
@@ -241,12 +261,44 @@
 
         <button class="primary" id="fast-toggle">Fasten starten</button>
         <p class="hint" id="fast-hint"></p>
+
+        <button class="ghost small hidden" id="fix-open">Startzeit korrigieren</button>
+        <div id="fix-form" class="subform hidden">
+          <div class="row">
+            <div class="field"><label for="fix-date">Datum</label><input id="fix-date" type="date"></div>
+            <div class="field"><label for="fix-time">Uhrzeit</label><input id="fix-time" type="time"></div>
+          </div>
+          <p class="hint" id="fix-info"></p>
+          <div class="row">
+            <button class="primary" id="fix-save">Übernehmen</button>
+            <button class="ghost" id="fix-cancel">Abbrechen</button>
+          </div>
+        </div>
       </div>
 
       <div class="card">
-        <h2>Letzte 7 Tage</h2>
+        <h2>Verlauf</h2>
         <div class="streak" id="streak"></div>
         <p class="hint" id="streak-note"></p>
+
+        <button class="ghost small" id="log-open">Zeit nachtragen</button>
+        <div id="log-form" class="subform hidden">
+          <div class="row">
+            <div class="field"><label for="log-date">Datum</label><input id="log-date" type="date"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label for="log-from">Von</label><input id="log-from" type="time"></div>
+            <div class="field"><label for="log-to">Bis</label><input id="log-to" type="time"></div>
+          </div>
+          <p class="hint" id="log-info"></p>
+          <div class="row">
+            <button class="primary" id="log-save">Speichern</button>
+            <button class="ghost" id="log-cancel">Abbrechen</button>
+          </div>
+          <button class="ghost danger hidden" id="log-delete">Eintrag löschen</button>
+        </div>
+
+        <ul class="list" id="fast-list"></ul>
       </div>
     </section>
 
@@ -414,9 +466,12 @@
       var target = fast.target * HOUR;
       var done = elapsed >= target;
 
+      var progress = Math.min(elapsed / target, 1);
       $("ring-time").textContent = duration(done ? elapsed : target - elapsed);
       $("ring-label").textContent = done ? "Ziel geschafft" : "verbleibend";
-      bar.setAttribute("stroke-dashoffset", circumference * (1 - Math.min(elapsed / target, 1)));
+      bar.setAttribute("stroke-dashoffset", circumference * (1 - progress));
+      // Runde Enden zeichnen sonst schon bei null Fortschritt einen Punkt.
+      bar.style.opacity = progress > 0 ? "1" : "0";
 
       $("t-start").textContent = clock(fast.start);
       $("t-end").textContent = clock(fast.start + target);
@@ -428,6 +483,7 @@
       $("ring-time").textContent = "00:00:00";
       $("ring-label").textContent = state.protocol + " Stunden";
       bar.setAttribute("stroke-dashoffset", circumference);
+      bar.style.opacity = "0";
 
       var now = new Date();
       $("t-start").textContent = clock(now.getTime());
@@ -447,20 +503,226 @@
     }
 
     $("header-sub").textContent = fast ? "am fasten" : state.protocol + ":" + (24 - state.protocol);
+    // Der Timer zeichnet jede Sekunde neu – ein offenes Korrekturformular
+    // darf dabei nicht wieder vom Knopf überlagert werden.
+    var fixIsOpen = !$("fix-form").classList.contains("hidden");
+    $("fix-open").classList.toggle("hidden", !fast || fixIsOpen);
+    if (!fast) closeFix();
   }
 
   function toggleFast() {
     if (state.activeFast) {
       var f = state.activeFast;
       var end = Date.now();
-      state.fasts.push({ start: f.start, end: end, target: f.target, hit: end - f.start >= f.target * HOUR });
+      addFast(f.start, end, f.target);
       state.activeFast = null;
     } else {
       state.activeFast = { start: Date.now(), target: state.protocol };
     }
     save();
+    renderAll();
+  }
+
+  /* ---------- Zeiten von Hand setzen ---------- */
+
+  // Datum und Uhrzeit aus den Eingabefeldern in einen Zeitpunkt umrechnen.
+  function parseLocal(dateStr, timeStr) {
+    var d = dateStr.split("-"), t = timeStr.split(":");
+    return new Date(+d[0], +d[1] - 1, +d[2], +t[0], +t[1], 0, 0).getTime();
+  }
+
+  function timeValue(ts) {
+    var d = new Date(ts);
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  function addFast(start, end, target) {
+    state.fasts.push({
+      start: start,
+      end: end,
+      target: target,
+      hit: end - start >= target * HOUR
+    });
+    state.fasts.sort(function (a, b) { return a.start - b.start; });
+  }
+
+  function hours(ms) {
+    var mins = Math.round(ms / 60000);
+    return Math.floor(mins / 60) + " Std. " + pad(mins % 60) + " Min.";
+  }
+
+  // Kurzform für die Liste, damit die Zeile nicht umbricht.
+  function hoursShort(ms) {
+    var mins = Math.round(ms / 60000);
+    return Math.floor(mins / 60) + ":" + pad(mins % 60) + " Std.";
+  }
+
+  /* Startzeit eines laufenden Fastens korrigieren */
+
+  function openFix() {
+    var start = state.activeFast.start;
+    $("fix-date").value = isoDate(new Date(start));
+    $("fix-time").value = timeValue(start);
+    $("fix-info").textContent = "";
+    $("fix-form").classList.remove("hidden");
+    $("fix-open").classList.add("hidden");
+  }
+
+  function closeFix() {
+    $("fix-form").classList.add("hidden");
+    if (state.activeFast) $("fix-open").classList.remove("hidden");
+  }
+
+  function saveFix() {
+    if (!state.activeFast) return;
+    var d = $("fix-date").value, t = $("fix-time").value;
+    if (!d || !t) { $("fix-info").textContent = "Bitte Datum und Uhrzeit angeben."; return; }
+
+    var start = parseLocal(d, t);
+    if (start > Date.now()) { $("fix-info").textContent = "Der Start kann nicht in der Zukunft liegen."; return; }
+
+    state.activeFast.start = start;
+    save();
+    closeFix();
+    renderFast();
+  }
+
+  /* Vergangene Zeiten nachtragen und bearbeiten */
+
+  var editing = null; // Index in state.fasts, oder null beim Nachtragen
+
+  function openLog(index) {
+    editing = typeof index === "number" ? index : null;
+
+    if (editing === null) {
+      var d = new Date();
+      $("log-date").value = isoDate(d);
+      $("log-from").value = "";
+      $("log-to").value = "";
+    } else {
+      var f = state.fasts[editing];
+      $("log-date").value = isoDate(new Date(f.start));
+      $("log-from").value = timeValue(f.start);
+      $("log-to").value = timeValue(f.end);
+    }
+
+    $("log-delete").classList.toggle("hidden", editing === null);
+    $("log-info").textContent = "";
+    $("log-form").classList.remove("hidden");
+    $("log-open").classList.add("hidden");
+    updateLogInfo();
+  }
+
+  function closeLog() {
+    editing = null;
+    $("log-form").classList.add("hidden");
+    $("log-open").classList.remove("hidden");
+  }
+
+  // Liest die Eingaben; gibt null zurück, wenn noch etwas fehlt.
+  function readLog() {
+    var d = $("log-date").value, a = $("log-from").value, b = $("log-to").value;
+    if (!d || !a || !b) return null;
+
+    var start = parseLocal(d, a);
+    var end = parseLocal(d, b);
+    // Ein Fasten läuft fast immer über Nacht: endet es rechnerisch vor dem
+    // Start, ist der nächste Tag gemeint.
+    if (end <= start) end += 24 * HOUR;
+    return { start: start, end: end };
+  }
+
+  function updateLogInfo() {
+    var v = readLog();
+    if (!v) { $("log-info").textContent = "Datum, Von und Bis ausfüllen."; return; }
+
+    var target = editing === null ? state.protocol : state.fasts[editing].target;
+    var span = v.end - v.start;
+    var over = new Date(v.start).getDate() !== new Date(v.end).getDate();
+
+    $("log-info").textContent = hours(span)
+      + (over ? " (bis zum Folgetag)" : "")
+      + " · Ziel " + target + " Std. "
+      + (span >= target * HOUR ? "erreicht" : "nicht erreicht");
+  }
+
+  function saveLog() {
+    var v = readLog();
+    if (!v) { $("log-info").textContent = "Bitte Datum, Von und Bis ausfüllen."; return; }
+    if (v.start > Date.now()) { $("log-info").textContent = "Das liegt in der Zukunft."; return; }
+
+    var target = editing === null ? state.protocol : state.fasts[editing].target;
+    if (editing !== null) state.fasts.splice(editing, 1);
+    addFast(v.start, v.end, target);
+
+    save();
+    closeLog();
+    renderAll();
+  }
+
+  function deleteLog() {
+    if (editing === null) return;
+    state.fasts.splice(editing, 1);
+    save();
+    closeLog();
+    renderAll();
+  }
+
+  function renderFastList() {
+    var ul = $("fast-list");
+    ul.innerHTML = "";
+
+    if (!state.fasts.length) {
+      ul.innerHTML = '<li class="empty">Noch keine abgeschlossenen Zeiten.</li>';
+      return;
+    }
+
+    // Neueste zuerst, auf die letzten zehn begrenzt.
+    var recent = state.fasts.slice(-10).reverse();
+
+    recent.forEach(function (f) {
+      var index = state.fasts.indexOf(f);
+      var li = document.createElement("li");
+
+      var date = document.createElement("span");
+      date.className = "date";
+      date.textContent = shortDate(isoDate(new Date(f.start)));
+
+      var times = document.createElement("span");
+      times.className = "times-cell";
+      times.textContent = clock(f.start) + " – " + clock(f.end);
+
+      var dur = document.createElement("span");
+      dur.className = "dur";
+      dur.textContent = hoursShort(f.end - f.start);
+
+      var mark = document.createElement("span");
+      mark.className = "mark";
+      mark.textContent = f.hit ? "✓" : "";
+
+      var chev = document.createElement("span");
+      chev.className = "chev";
+      chev.textContent = "›";
+
+      // Die ganze Zeile öffnet die Bearbeitung – auf dem Handy leichter zu
+      // treffen als ein kleines Symbol.
+      li.className = "tappable";
+      li.title = "Zeiten bearbeiten";
+      li.addEventListener("click", function () { openLog(index); });
+
+      li.appendChild(date);
+      li.appendChild(times);
+      li.appendChild(dur);
+      li.appendChild(mark);
+      li.appendChild(chev);
+      ul.appendChild(li);
+    });
+  }
+
+  function renderAll() {
     renderFast();
     renderStreak();
+    renderFastList();
   }
 
   function renderStreak() {
@@ -637,12 +899,24 @@
     $("app").classList.remove("hidden");
 
     renderProtocols();
-    renderFast();
-    renderStreak();
+    renderAll();
     $("w-date").value = isoDate(new Date());
     renderWeight();
 
     $("fast-toggle").addEventListener("click", toggleFast);
+
+    $("fix-open").addEventListener("click", openFix);
+    $("fix-save").addEventListener("click", saveFix);
+    $("fix-cancel").addEventListener("click", closeFix);
+
+    $("log-open").addEventListener("click", function () { openLog(null); });
+    $("log-save").addEventListener("click", saveLog);
+    $("log-cancel").addEventListener("click", closeLog);
+    $("log-delete").addEventListener("click", deleteLog);
+    ["log-date", "log-from", "log-to"].forEach(function (id) {
+      $(id).addEventListener("input", updateLogInfo);
+    });
+
     $("w-save").addEventListener("click", saveWeight);
     $("w-input").addEventListener("keydown", function (e) { if (e.key === "Enter") saveWeight(); });
     $("tab-fast").addEventListener("click", function () { showTab("fast"); });
@@ -658,7 +932,7 @@
     // damit er einen Reload oder eine gesperrte Bildschirmzeit übersteht.
     if (!ticker) ticker = setInterval(function () { if (state.activeFast) renderFast(); }, 1000);
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) { renderFast(); renderStreak(); }
+      if (!document.hidden) renderAll();
     });
   }
 
