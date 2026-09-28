@@ -87,3 +87,10 @@ und wer die Browserdaten löscht, löscht auch den Verlauf. Der Knopf
 
 Die App ist ein Werkzeug zum Nachhalten, keine medizinische Beratung.
 Bei Vorerkrankungen, Schwangerschaft oder Medikamenteneinnahme vorher ärztlich abklären.
+
+## Außerdem im Repository: BlauPeil
+
+Im Ordner [`blaupeil/`](blaupeil/README.md) liegt ein eigenständiger
+Flutter-Prototyp, der Handys per Bluetooth findet und die Richtung auf einer
+Kompassrose anzeigt. Mit der Fasten-App hat er nichts zu tun und wird auch
+nicht über GitHub Pages veröffentlicht.
